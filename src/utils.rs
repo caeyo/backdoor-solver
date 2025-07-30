@@ -1,4 +1,5 @@
 use flate2::read::GzDecoder;
+use xz2::read::XzDecoder;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
@@ -34,20 +35,17 @@ pub fn get_extension(path: &Path) -> Option<&str> {
     path.extension().and_then(OsStr::to_str)
 }
 
-pub fn read_maybe_gzip<P>(path: P) -> io::Result<Box<dyn BufRead>>
+pub fn read_maybe_zip<P>(path: P) -> io::Result<Box<dyn BufRead>>
 where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
     let file = File::open(path)?;
     let capacity = 128 * 1024;
-    if get_extension(path).unwrap() == "gz" {
-        Ok(Box::new(BufReader::with_capacity(
-            capacity,
-            GzDecoder::new(file),
-        )))
-    } else {
-        Ok(Box::new(BufReader::with_capacity(capacity, file)))
+    match get_extension(path).as_deref() {
+        Some("gz") => Ok(Box::new(BufReader::with_capacity(capacity, GzDecoder::new(file)))),
+        Some("xz") => Ok(Box::new(BufReader::with_capacity(capacity, XzDecoder::new(file)))),
+        _ => Ok(Box::new(BufReader::with_capacity(capacity, file))),
     }
 }
 
@@ -55,7 +53,7 @@ pub fn parse_dimacs<P>(path: P) -> impl Iterator<Item = Vec<Lit>>
 where
     P: AsRef<Path>,
 {
-    read_maybe_gzip(path)
+    read_maybe_zip(path)
         .unwrap()
         .lines()
         .map_while(Result::ok)

@@ -24,6 +24,7 @@ ahash = "0.8"
 crossbeam-channel = "0.5"
 test-log = "0.2"
 flate2 = "1.0"
+xz2 = "0.1"
 
 ffi-utils = { path = "lib/ffi-utils" }
 cadical-sys = { path = "lib/cadical-sys", features = ["static"] }
