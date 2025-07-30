@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::io::Write;
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Instant, Duration};
 
 use clap::Parser;
 use itertools::Itertools;
@@ -45,6 +45,10 @@ struct Cli {
     /// Path to a output file with backdoors.
     #[arg(short = 'o', long = "output", value_name = "FILE")]
     path_output: Option<PathBuf>,
+    
+    /// Timeout for searcher.
+    #[arg(short = 't', long = "timeout", value_name = "INT")]
+    timeout: Option<u64>,
 
     /// Random seed.
     #[arg(long, value_name = "INT", default_value_t = DEFAULT_OPTIONS.seed)]
@@ -122,6 +126,8 @@ fn main() -> color_eyre::Result<()> {
     let start_time = Instant::now();
     let args = Cli::parse();
     info!("args = {:?}", args);
+
+    let mut running_to: Option<Duration> = args.timeout.map(Duration::from_secs);
 
     // Initialize SAT solver:
     let solver = Cadical::new();
@@ -270,6 +276,7 @@ fn main() -> color_eyre::Result<()> {
                 Some(args.max_rho),
                 args.min_iter,
                 args.pool_limit,
+                running_to,
             )
             .unwrap();
         assert!(
@@ -592,6 +599,13 @@ fn main() -> color_eyre::Result<()> {
                     record.fitness.num_hard,
                     record.fitness.rho,
                 ))?;
+            }
+        }
+
+        if let Some(ref mut remaining) = running_to {
+            *remaining = remaining.checked_sub(time_run.elapsed()).unwrap_or_else(|| Duration::ZERO);
+            if *remaining <= Duration::ZERO {
+                break;
             }
         }
     }

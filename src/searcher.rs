@@ -82,6 +82,7 @@ impl BackdoorSearcher {
         max_rho: Option<f64>,
         min_iter: usize,
         pool_limit: Option<usize>,
+        timeout: Option<Duration>,
     ) -> Option<RunResult> {
         let start_time = Instant::now();
 
@@ -176,6 +177,12 @@ impl BackdoorSearcher {
         let mut num_stagnation: usize = 0;
 
         for i in 1..=num_iter {
+            if let Some(to) = timeout {
+                if start_time.elapsed() >= to {
+                    break;
+                }
+            }
+
             let time_iter = Instant::now();
 
             // Break upon reaching the maximum required rho:
