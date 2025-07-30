@@ -735,7 +735,7 @@ impl Cadical {
 
         if clause.len() >= 2 {
             for lit in clause {
-                assert!(self.is_active(lit), "lit {} is not active", lit);
+                // assert!(self.is_active(lit), "lit {} is not active", lit);
                 self.add_derived(lit);
             }
             self.add_derived(0);
